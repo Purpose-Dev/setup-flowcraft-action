@@ -1,0 +1,76 @@
+name: 'Setup Flowcraft'
+description: 'Downloads a specific version of Flowcraft and adds it to the PATH'
+
+inputs:
+  version:
+    description: 'The version of Flowcraft to install (e.g., "v0.1.1")'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Get OS/Arch Info
+      id: os-arch
+      shell: bash
+      run: |
+        if [ "${{ runner.os }}" == "Linux" ]; then
+          echo "GOOS=linux" >> $GITHUB_ENV
+          echo "ARCHIVE_TYPE=tar.gz" >> $GITHUB_ENV
+        elif [ "${{ runner.os }}" == "macOS" ]; then
+          echo "GOOS=darwin" >> $GITHUB_ENV
+          echo "ARCHIVE_TYPE=tar.gz" >> $GITHUB_ENV
+        elif [ "${{ runner.os }}" == "Windows" ]; then
+          echo "GOOS=windows" >> $GITHUB_ENV
+          echo "ARCHIVE_TYPE=zip" >> $GITHUB_ENV
+        else
+          echo "Unsupported OS: ${{ runner.os }}"
+          exit 1
+        fi
+        
+        if [ "${{ runner.arch }}" == "X64" ]; then
+          echo "GOARCH=amd64" >> $GITHUB_ENV
+        elif [ "${{ runner.arch }}" == "ARM64" ]; then
+          echo "GOARCH=arm64" >> $GITHUB_ENV
+        else
+          echo "Unsupported Arch: ${{ runner.arch }}"
+          exit 1
+        fi
+
+    - name: Download Flowcraft
+      shell: bash
+      run: |
+        VERSION="${{ inputs.version }}"
+        VERSION_NUM=${VERSION#v}        
+        FILENAME="flowcraft_${VERSION_NUM}_${{ env.GOOS }}_${{ env.GOARCH }}.${{ env.ARCHIVE_TYPE }}"
+        
+        echo "Downloading: ${FILENAME}"
+        
+        DOWNLOAD_URL="https://github.com/Purpose-Dev/flowcraft/releases/download/${{ inputs.version }}/${FILENAME}"
+        
+        curl -L -o ${FILENAME} ${DOWNLOAD_URL}
+        echo "FILENAME=${FILENAME}" >> $GITHUB_ENV
+
+    - name: Extract Binary
+      shell: bash
+      run: |
+        echo "Extracting ${{ env.FILENAME }}..."
+        if [ "${{ env.ARCHIVE_TYPE }}" == "tar.gz" ]; then
+          tar -xzf ${{ env.FILENAME }}
+        elif [ "${{ env.ARCHIVE_TYPE }}" == "zip" ]; then
+          unzip ${{ env.FILENAME }}
+        fi
+
+        if [ "${{ env.GOOS }}" == "windows" ]; then
+          mv flowcraft.exe flowcraft
+        fi
+
+    - name: Add to PATH
+      shell: bash
+      run: |
+        echo "${{ github.action_path }}" >> $GITHUB_PATH
+
+    - name: Verify Installation
+      shell: bash
+      run: |
+        echo "Flowcraft installed:"
+        flowcraft --version
