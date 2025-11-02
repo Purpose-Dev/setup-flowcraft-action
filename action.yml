@@ -1,6 +1,10 @@
 name: 'Setup Flowcraft'
 description: 'Downloads a specific version of Flowcraft and adds it to the PATH'
 
+branding:
+  icon: zap
+  color: blue
+
 inputs:
   version:
     description: 'The version of Flowcraft to install (e.g., "v0.1.1")'
