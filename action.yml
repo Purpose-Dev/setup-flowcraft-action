@@ -67,6 +67,9 @@ runs:
         if [ "${{ env.GOOS }}" == "windows" ]; then
           mv flowcraft.exe flowcraft
         fi
+        
+        echo "Moving binary to ${{ github.action_path }}"
+        mv flowcraft "${{ github.action_path }}/"
 
     - name: Add to PATH
       shell: bash
